@@ -6,6 +6,12 @@ def convertInDictionaryAdmin(list1):
         "password":i[2]
     }for i in list1
     }
+def convertInDictionaryUser(list2):
+    return {i[0]:{
+        "name":i[1],
+        "email":i[2],
+        "age":i[3]
+    }for i in list2}
 current_path = os.path.dirname(__file__)
 dir_name = "database"
 db_name = "newdb.db"
@@ -34,6 +40,7 @@ try:
     age INTEGER);
     '''
     cursor.execute(create_admin)
+    cursor.execute(create_user)
     connection.commit()
     while True:
         choice1 = input("Do you want to see the admin menu... YES/NO")
@@ -98,9 +105,190 @@ try:
             print("sorry wrong credentials..")
             print(f"You have only {counter} attempts left")
     if login_state:
-        print("Here is the user db")
+        while True:
+            print("Welcome to the user database")
+            print("-----Menu-----")
+            userchoice = input("1. Add user\n""2.Search user\n""3.Update User\n""4.Delete User\n""5.Print\n""6.Exit\n" )
+            if userchoice=="1":
+                user_name = input("User name")
+                user_email = input("User email")
+                search_user_query = "SELECT * FROM user WHERE email = ?"
+                cursor.execute(search_user_query,(user_email,))
+                find = cursor.fetchone()
+                if find:
+                    print("email is already being used. Try different emails")
+                    continue
+                else:
+                    try:
+                        user_age = int(input("User age"))
+                    except ValueError:
+                        print("please put ages in digits and not alplhabets")    
+                        continue
+                    insert_query= "INSERT INTO user (name, email, age) VALUES (?,?,?)"
+                    cursor.execute(insert_query,(user_name,user_email,user_age,))
+                    connection.commit()
+                    print(f"{user_name} added to the database successfully")
+                continue
+            elif userchoice == "2":
+                search_choice = input("1.Search by Id\n""2.Search by name\n""3.Search by email\n")
+                if search_choice=="1":
+                    while True:
+                        try:
+                            search_id=int(input("Please input the id that you want to search"))
+                            break
+                        except ValueError:
+                            print("Please input id in numerical value")
+                            continue    
+                    search_Id_querry = "SELECT * FROM user WHERE id =?"
+                    cursor.execute(search_Id_querry,(search_id,))
+                    find_id = cursor.fetchone()
+                    if find_id:
+                        print(find_id)
+                        continue
+                    else:
+                        print("Id was not found")
+                        continue
+                elif search_choice == "2":
+                    search_name = input("Please enter the name that you want to search")
+                    search_name_querry = "SELECT * FROM user WHERE name = ?"
+                    cursor.execute(search_name_querry,(search_name,))
+                    find_name = cursor.fetchall() 
+                    if find_name:
+                        list2 = convertInDictionaryUser(find_name)
+                        for i,details in list2.items():
+                            print(f"{i}->{details}")
+                        continue
+                    else:
+                        print(f"the database does not have any user with {search_name}")
+                        continue
+                elif search_choice== "3":
+                    search_mail=input("Please input the mail that you want to search")
+                    search_mail_querry = "SELECT * FROM user WHERE email =?"
+                    cursor.execute(search_mail_querry,(search_mail,))
+                    find_mail = cursor.fetchone()
+                    if find_mail:
+                        print(find_mail)
+                        continue
+                    else:
+                        print("mail was not found")
+                        continue
+                else:
+                    print("You have entered a wrong input")
+                    continue
+            elif userchoice == "3":
+                print("Here is a list of our users")
+                user_search_querry = "SELECT * FROM user"
+                cursor.execute(user_search_querry)
+                user_list = cursor.fetchall()
+                if user_list:
+                    list3 = convertInDictionaryUser(user_list)
+                    for i,details in list3.items():
+                        print(f"{i}->{details}")
+                    while True:
+                        try:    
+                            update_choice_id = int(input("Please select the id of the user from above list that you want to update"))
+                            break
+                        except ValueError:
+                            print("Please use a numerical value for the id")
+                            continue
+                    search_user_id = "SELECT * FROM user WHERE id = ?"
+                    cursor.execute(search_user_id,(update_choice_id,))
+                    found_id1 = cursor.fetchone()
+                    if found_id1:
+                        update_choice_menu= input("What do you want to update? Name or email or age of the user")
+                        if update_choice_menu.lower()=="name":
+                            update_name = input("Please enter the new name")
+                            update_querry = "UPDATE user SET name =? WHERE id =? "
+                            cursor.execute(update_querry,(update_name,update_choice_id,))
+                            connection.commit()
+                            print("Username changed successfully")
+                            continue
+                        elif update_choice_menu.lower()=="email":
+                            update_email = input("Please input a newmail")
+                            search_mail_update = "SELECT * FROM user WHERE email = ?"
+                            cursor.execute(search_mail_update,(update_email,))
+                            found_mail = cursor.fetchone()
+                            if found_mail:
+                                print("the mail you entered is already in the list please enter a new mail")
+                                continue
+                            else:
+                                update_mail_querry = "UPDATE user SET email = ? WHERE id = ?"
+                                cursor.execute(update_mail_querry,(update_email,update_choice_id))
+                                connection.commit()
+                                print("mail was updated successfully")
+                                continue
+                        elif update_choice_menu.lower()=="age":
+                            while True:
+                                try:
+                                    update_age = int(input("Please enter new age"))
+                                    break
+                                except ValueError:
+                                    print("Please input age in digits")
+                                    continue    
+                            update_age_querry = "UPDATE user SET age =? WHERE id =?"
+                            cursor.execute(update_age_querry,(update_age,update_choice_id))
+                            connection.commit()
+                            print("Age was updated of the user")
+                            continue
+                        else:
+                            print("Wrong input")
+                            continue
+                    else:
+                        print("The id that you are looking for is not in the database")
+                        continue
+            elif userchoice=="4":
+                print("Here is the list of user")
+                user_list_2 = "SELECT * FROM user"
+                cursor.execute(user_list_2)
+                list4 = cursor.fetchall()
+                delete_list = convertInDictionaryUser(list4)
+                for i,details in delete_list.items():
+                    print(f"{i}->{details}")
+                while True:
+                    try:
+                        delete_id = int(input("Select the id that you want to delete from the database"))
+                        break
+                    except ValueError:
+                        print("Please use a numerical value for the id")
+                        continue
+                search_delete_id= "SELECT * FROM user WHERE id =?"
+                cursor.execute(search_delete_id,(delete_id,))
+                found_id = cursor.fetchone()
+                if found_id:
+                    print(found_id)
+                    confirmation = input("Are you sure that you want to delete the user above")
+                    if confirmation.lower()=="yes":
+                        delete_id_querry = "DELETE FROM user WHERE id = ?"
+                        cursor.execute(delete_id_querry,(delete_id,))
+                        connection.commit()
+                        print("User deleted successfully")
+                        continue
+                    elif confirmation.lower()=="no":
+                        print("going back to main menu")
+                        continue
+                    else:
+                        print("You have entered the wrong input")
+                        continue
+                else:
+                    print("The id the you are looking for is not in the database")
+                    continue
+            elif userchoice =="5":
+                print("Here are the list of the user in your database")
+                list_user_querry = "SELECT * FROM user"
+                cursor.execute(list_user_querry)
+                list_user = cursor.fetchall()
+                convert_list = convertInDictionaryUser(list_user)
+                for i,details in convert_list.items():
+                    print(f"{i}->{details}")
+                continue            
+            elif userchoice=="6":
+                print("admin loginoff.")
+                break
+            else:
+                print("Please select options from the above menu")
+                continue        
     else:
-        print("The program is shuting down")                        
+        print("The program is shuting down")                     
     connection.close()
 except sqlite3.Error as e:
     print(e)    
