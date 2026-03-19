@@ -1,0 +1,19 @@
+# Python bytecode (compiled files)
+__pycache__/
+*.py[cod]
+
+# SQLite database files (Don't push the data, just the code!)
+*.db
+*.sqlite3
+
+# Virtual Environments (Very bulky)
+.venv/
+venv/
+ENV/
+
+# Sensitive Information (For the future)
+.env
+
+# OS-specific files
+.DS_Store
+Thumbs.db
