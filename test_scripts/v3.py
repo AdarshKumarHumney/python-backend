@@ -1,17 +1,13 @@
-import os
 from database import Database
 from security import Security
 from model import AdminUser
 from model import NormalUser
-from dotenv import load_dotenv
-load_dotenv()
 print("Welcome to Db with class")
-db_name = os.getenv("DB_NAME")
-d1 = Database(db_name) 
+d1 = Database() 
 a1 = AdminUser(d1)
 s1 = Security(d1)
 u1 = NormalUser(d1)
-admin_check = os.getenv("ADMIN_PASSWORD")
+admin_check = "12345"
 allowed = False
 counter= 3
 def print_list(choice):
@@ -37,11 +33,11 @@ try:
                     admin_name = input("Please input the name of your admin")
                     admin_email = input("Please input the mail of your admin")
                     admin_password = input("Please input the password")
-                    success = a1.AddAdmin(admin_name,admin_email,admin_password)
-                    if success['value']:
-                        print(success['message'])
-                    else:
-                        print(success['message'])
+                    try:
+                        a1.AddAdmin(admin_name,admin_email,admin_password)
+                        print("Admin addedd successfully")
+                    except sqlite3.Error as e:
+                        print(e)
                 elif userchoice.lower() == "no":
                     print("Thank you")
                     break
@@ -60,13 +56,12 @@ try:
                                 print("Please give a digit as input")
                                 continue
                         id_found = a1.SearchAdmin(choice,value)
-                        if id_found['value']:
-                            print(id_found['message'])
-                            for i in id_found['data']:
+                        if id_found:
+                            for i in id_found:
                                 print(i)
                             break
                         else:
-                            print(id_found['message'])
+                            print(f"{value} is not in the database")
                             exit_choice = input("Do you want to search again or exit")
                             if exit_choice.lower()=="exit":
                                 break
@@ -76,13 +71,12 @@ try:
                     while True:
                         value = input("Please provide a name for search in Admin")
                         name_found = a1.SearchAdmin(choice,value)
-                        if name_found['value']:
-                            print(name_found['message'])
-                            for i in name_found['data']:
+                        if name_found:
+                            for i in name_found:
                                 print(i)
                             break
                         else:
-                            print(name_found['message'])
+                            print(f"{value} is not in the database")
                             exit_choice = input("Do you want to search again or exit")
                             if exit_choice.lower()=="exit":
                                 break
@@ -92,13 +86,12 @@ try:
                     while True:
                         value = input("Please give an email to search")
                         email_found = a1.SearchAdmin(choice,value)
-                        if email_found['value']:
-                            print(email_found['message'])
-                            for i in email_found['data']:
+                        if email_found:
+                            for i in email_found:
                                 print(i)
                             break
                         else:
-                            print(email_found['message'])
+                            print(f"{value} is not in the database")
                             exit_choice = input("Do you want to search again or exit")
                             if exit_choice.lower()=="exit":
                                 break
