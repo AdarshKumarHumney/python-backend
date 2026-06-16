@@ -1,3 +1,5 @@
+import sqlite3
+
 def validateName(name):
     allowed ="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 - "
     try:
