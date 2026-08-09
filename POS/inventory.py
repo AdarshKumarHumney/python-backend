@@ -199,3 +199,5 @@ class Inventory:
             else:
                 print("Please select either yes or no")
         return True
+    def printNamePrice(self):
+        return self.im.printList()
