@@ -17,11 +17,13 @@ class Database:
     def disconnect(self):
         self.connection.close()
     def runQuerry(self,querry,params = (), autocommit = True):
+        if self.connection is None:
+            self.connect()
         data = []
         try:
             self.cursor.execute(querry,params)
             if querry.strip().upper().startswith("SELECT"):
-                attributes = [desc[0].upper() for desc in self.cursor.description]
+                attributes = [desc[0] for desc in self.cursor.description]
                 list1 = self.cursor.fetchall()
                 for i in list1:
                     data.append(dict(zip(attributes,i)))
@@ -29,7 +31,9 @@ class Database:
                 data = None
             if autocommit:
                 self.connection.commit()
-            return {"value": True,"message":"querry executed successfully","data":data}
+            return {"value": True,"message":"querry executed successfully","data":data,"rowcount":self.cursor.rowcount,"lastrowid":self.cursor.lastrowid}
+        except sqlite3.ProgrammingError as e:
+            return {"value":False,"message":f"Connection error - {e}","data":None}
         except sqlite3.Error as e:
             if not autocommit:
                 self.connection.rollback()
@@ -40,7 +44,7 @@ class Database:
             return{"value":True,"message":f"The commit happened successfully","data":None}
         except sqlite3.Error as e:
             return{"value":False,"message":f"There was a problem-{e}","data":None}
-    def rollbackTrasncation(self):
+    def rollbackTransaction(self):
         try:
             self.connection.rollback()
             return{"value":True,"message":f"RollBack happened successfully","data":None}

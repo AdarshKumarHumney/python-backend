@@ -1,7 +1,7 @@
 class User:
     def __init__(self,user_manager,security,inventory,admin):
         self.um = user_manager
-        self.sec = security(admin,user_manager)
+        self.sec = security
         self.im = inventory
         self.ad = admin
     def signUp(self):
@@ -95,9 +95,9 @@ class User:
                 print("Please select from the above list")
         return True
     def deleteUser(self):
-        self.printUSer()
+        self.um.printUSer()
         while True:
-            email = input("Please select the id from the above that you want to delete")
+            email = input("Please select the email from the above that you want to delete")
             response_search = self.um.searchEmail(email)
             if not response_search['value']:
                 print("There was problem in the database")
@@ -110,7 +110,7 @@ class User:
             if confirm=="yes":
                 response = self.um.deleteUser(email)
                 if response['value']:
-                    print(f"{id} was deleted successfully")
+                    print(f"{email} was deleted successfully")
                 else:
                     print(f"There was problem deleting the id - {response['message']}")
             else:
@@ -131,7 +131,7 @@ class User:
                 if not create["allow"]:
                     print("Signin was unsuccessfull")
                     continue
-                user_id = create['data'][0]['user_id']
+                user_id = create['data']['user_id']
                 break
             elif choice == "signup":
                 response = self.signUp()
@@ -159,7 +159,7 @@ class User:
                 print("...User Menu...")
                 choice = input("BUY || UPDATE || DELETE || EXIT").lower()
                 if choice == "buy":
-                    check = self.um.checkCart(user_id)
+                    check = self.um.showCart(user_id)
                     create_response = self.um.cartTable()
                     if not create_response['value']:
                         print(f"There was some problem in making cart - {create_response['message']}")
@@ -183,7 +183,7 @@ class User:
                                     break
                                 except ValueError as e:
                                     print("Please input in integer")
-                            check_item = self.im.checkById(item_id)
+                            check_item = self.im.searchById(item_id)
                             if not check_item['value']:
                                 print(f"There is some problem in the database - {check_item['message']}")
                                 continue
@@ -283,6 +283,51 @@ class User:
                                     continue
                                 else:
                                     print("Value updated successfully")
+                        elif buy_choice == "buy":
+                            create1 = self.um.createSaleTable()
+                            create2 = self.um.createSaleItem()
+                            if not create1['value'] or not create2['value']:
+                                print("Problem in the database creating the sale table or saleitem table")
+                                continue
+                            total = 0
+                            checkout = self.um.checkout(user_id)
+                            if not checkout['value']:
+                                print(checkout['message'])
+                                continue
+                            for i in checkout['data']:
+                                print(i)
+                                total = total+(i['item_quant']*i['item_price'])
+                            sale = self.um.addToSale(user_id,total)
+                            if not sale['value']:
+                                self.um.db.rollbackTransaction()
+                                print("There was problem in the database")
+                                continue
+                            sale_recipt = self.um.seeSale(user_id)
+                            if not sale_recipt['value']:
+                                print("Problem in getting sale recipt due to database")
+                                continue
+                            for i in checkout['data']:
+                                item_add = self.um.addToSaleItem(sale['lastrowid'],i['item_id'],i['item_name'],i['item_quant'],i['item_price'])
+                                if not item_add['value']:
+                                    print(f"There was problem in adding - {i['item_name']}")
+                                    self.um.db.rollbackTransaction()
+                                    continue
+                            sale_item = self.um.saleItem(sale['lastrowid'])
+                            if not sale_item['value']:
+                                print("there was some problem in the database")
+                                self.um.db.rollbackTransaction()
+                                continue
+                            self.um.db.commitTransaction()
+                            print("Here is your recipt")
+                            for i in checkout['data']:
+                                print(i)
+                            for i in sale_item['data']:
+                                print(i)
+                        elif buy_choice == "exit":
+                            print("Exiting from the buy menu")
+                            break
+                        else:
+                            print("Please select form the above set of choices")
                 elif choice == "update":
                     self.updateUSer()
                 elif choice == "delete":
@@ -294,4 +339,3 @@ class User:
                 else:
                     print("Please select from the above set of choices")
                     continue
-        self.um.closeDb()

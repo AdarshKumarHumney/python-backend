@@ -218,4 +218,3 @@ class Admin:
                 break
             else:
                 print("Please select from the above set of choices")
-        self.am.closeDb()

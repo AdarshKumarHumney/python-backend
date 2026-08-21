@@ -1,7 +1,7 @@
-class User:
+class UserManager:
     def __init__(self,db):
         self.db = db
-        self.status = self.create_table
+        self.status = self.create_table()
     def create_table(self):
         create_querry = '''CREATE TABLE IF NOT EXISTS user(
                         user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,17 +31,17 @@ class User:
         print_querry = "SELECT * FROM user"
         print_response = self.db.runQuerry(print_querry)
         return print_response
-    def updateName(self,id,name):
-        update_querry = "UPDATE user SET user_name = ? WHERE user_id = ?"
+    def updateName(self,mail,name):
+        update_querry = "UPDATE user SET user_name = ? WHERE user_email = ?"
         update_response = self.db.runQuerry(update_querry,(name,id))
         return update_response
-    def updateEmail(self,id,mail):
-        update_querry = "UPDATE user SET user_email = ? WHERE user_id = ?"
-        update_response = self.db.runQuerry(update_querry,(mail,id))
+    def updateEmail(self,email,mail):
+        update_querry = "UPDATE user SET user_email = ? WHERE user_email = ?"
+        update_response = self.db.runQuerry(update_querry,(mail,email))
         return update_response
-    def updatePassword(self,id,passw):
-        update_querry = "UPDATE user SET user_pass = ? WHERE user_id = ?"
-        update_response = self.db.runQuerry(update_querry,(passw,id))
+    def updatePassword(self,mail,passw):
+        update_querry = "UPDATE user SET user_pass = ? WHERE user_email = ?"
+        update_response = self.db.runQuerry(update_querry,(passw,mail))
         return update_response
     def searchId(self,id):
         search_id = "SELECT * FROM user WHERE user_id = ?"
@@ -56,7 +56,7 @@ class User:
         search_response = self.db.runQuerry(search_mail,(mail,))
         return search_response
     def deleteUser(self,mail):
-        delete_querry = "DELETE * FROM user WHERE user_email = ?"
+        delete_querry = "DELETE FROM user WHERE user_email = ?"
         delete_response = self.db.runQuerry(delete_querry,(mail,))
         return delete_response
     def showCart(self,id):
@@ -95,6 +95,81 @@ class User:
                 WHERE c.user_id = ? AND c.item_id = ?'''
         response = self.db.runQuerry(search,(usid,iid))
         return response
+    def createSaleTable(self):
+        create_table = '''CREATE TABLE IF NOT EXISTS sale(
+                        sale_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        total_amount REAL NOT NULL CHECK(total_amount>=0),
+                        sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE);'''
+        response = self.db.runQuerry(create_table)
+        return response
+    def createSaleItem(self):
+        create_table = '''CREATE TABLE IF NOT EXISTS sale_item(
+                        sale_id INTEGER NOT NULL,
+                        item_id INTEGER NOT NULL,
+                        item_name VARCHAR(50) NOT NULL,
+                        item_quant INTEGER NOT NULL CHECK(item_quant>0),
+                        price_at_purchase REAL NOT NULL CHECK(price_at_purchase>=0),
+                        PRIMARY KEY(sale_id,item_id),
+                        FOREIGN KEY (sale_id) REFERENCES sale(sale_id) ON DELETE CASCADE,
+                        FOREIGN KEY (item_id) REFERENCES inventory(item_id)
+                        );'''
+        response = self.db.runQuerry(create_table)
+        return response
+    def addToSale(self,user_id,total_amount):
+        add_querry = "INSERT INTO sale (user_id,total_amount) VALUES (?,?)"
+        response = self.db.runQuerry(add_querry,(user_id,total_amount), autocommit = False)
+        return response
+    def addToSaleItem(self,sale_id,item_id,item_name,item_quant,price):
+        add_querry = "INSERT INTO sale_item(sale_id,item_id,item_name,item_quant,price_at_purchase) VALUES (?,?,?,?,?)"
+        response = self.db.runQuerry(add_querry,(sale_id,item_id,item_name,item_quant,price), autocommit = False)
+        return response
+    def checkoutCart(self,user_id):
+        querry = '''SELECT c.item_id,
+                    c.item_quant,
+                    i.item_name,
+                    i.item_price,
+                    i.item_quant AS stock
+                    FROM cart c
+                    INNER JOIN inventory i ON c.item_id = i.item_id
+                    WHERE c.user_id = ?'''
+        response = self.db.runQuerry(querry,(user_id,))
+        return response
+    def seeSale(self,user_id):
+        see = "SELECT * FROM sale WHERE user_id = ?"
+        response = self.db.runQuerry(see,(user_id,))
+        return response
+    def saleItem(self,sale_id):
+        querry = "SELECT * FROM sale_item WHERE sale_id = ?"
+        response = self.db.runQuerry(querry,(sale_id,))
+        return response
+    def checkout(self,user_id):
+        getcart = self.checkoutCart(user_id)
+        if not getcart['value'] or not getcart['data']:
+            return{"value":False,"message":"There was no item in cart or there was some problem in the database","data":None}
+        for i in getcart['data']:
+            if i['item_quant']>i['stock']:
+                return{"value":False,"message":f"{i['item_name']} has more quantity than stock please reduce the quantity and try again","data":None}
+        try:
+            for i in getcart['data']:
+                update = "UPDATE inventory SET item_quant = item_quant-? WHERE item_id = ? and item_quant>=?"
+                response = self.db.runQuerry(update,(i['item_quant'],i['item_id'],i['item_quant']),autocommit = False)
+                if not response['value']:
+                    self.db.rollbackTransaction()
+                    return{"value":False,"message":f"There was problem in update - {i['item_name']}","data":None}
+                if response.get('rowcount',0)==0:
+                    self.db.rollbackTransaction()
+                    return{"value":False,"message":f"The stock was high for-{i['item_name']}","data":None}
+            delete = "DELETE FROM cart WHERE user_id = ?"
+            response = self.db.runQuerry(delete,(user_id,),autocommit = False)
+            if not response['value']:
+                self.db.rollbackTransaction()
+                return{"value":False,"message":f"There was problem in deleting the cart","data":None}
+            return{"value":True,"message":f"checkout completed","data":getcart['data']}
+        except Exception as e:
+                self.db.rollbackTransaction()
+                return{"value":False,"message":f"The problem -{e}","data":None}
     def closeDb(self):
         self.db.disconnect()
     

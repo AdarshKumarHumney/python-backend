@@ -201,3 +201,6 @@ class Inventory:
         return True
     def printNamePrice(self):
         return self.im.printList()
+    def searchById(self,id):
+        response = self.im.searchById(id)
+        return response
