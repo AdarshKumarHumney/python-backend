@@ -42,8 +42,6 @@ class AdminMange:
         delete_querry = "DELETE FROM admin WHERE id=?"
         response = self.db.runQuerry(delete_querry,(id,))
         return response
-    def closeDb(self):
-        self.db.disconnect()
     def verifyAdmin(self,mail,password):
         search_querry = "SELECT * FROM admin WHERE email = ? AND password = ?"
         response = self.db.runQuerry(search_querry,(mail,password))

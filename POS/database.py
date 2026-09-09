@@ -2,14 +2,18 @@ import os
 import sqlite3
 class Database:
     def __init__(self, db_name):
-        cur_dir = os.path.dirname(__file__)
-        self.db_path = os.path.join(cur_dir,db_name)
+        if db_name==":memory:":
+            self.db_path = ":memory:"
+        else:
+            cur_dir = os.path.dirname(__file__)
+            self.db_path = os.path.join(cur_dir,db_name)
         self.connection = None
         self.cursor = None
         self.status = self.connect()
     def connect(self):
         try:
             self.connection = sqlite3.connect(self.db_path)
+            self.connection.execute("PRAGMA foreign_keys==ON;")
             self.cursor = self.connection.cursor()
             return{"value": True, "message": "Database is connected","data":None}
         except sqlite3.Error as e:

@@ -2,6 +2,9 @@ class UserManager:
     def __init__(self,db):
         self.db = db
         self.status = self.create_table()
+        self.cartTable()
+        self.createSaleTable()
+        self.createSaleItem()
     def create_table(self):
         create_querry = '''CREATE TABLE IF NOT EXISTS user(
                         user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,7 +36,7 @@ class UserManager:
         return print_response
     def updateName(self,mail,name):
         update_querry = "UPDATE user SET user_name = ? WHERE user_email = ?"
-        update_response = self.db.runQuerry(update_querry,(name,id))
+        update_response = self.db.runQuerry(update_querry,(name,mail))
         return update_response
     def updateEmail(self,email,mail):
         update_querry = "UPDATE user SET user_email = ? WHERE user_email = ?"
@@ -170,6 +173,4 @@ class UserManager:
         except Exception as e:
                 self.db.rollbackTransaction()
                 return{"value":False,"message":f"The problem -{e}","data":None}
-    def closeDb(self):
-        self.db.disconnect()
     

@@ -6,11 +6,13 @@ class InventoryManager:
         create_querry = '''CREATE TABLE IF NOT EXISTS inventory(
                         item_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         item_name TEXT NOT NULL,
-                        item_price REAL NOT NULL,
+                        item_price REAL NOT NULL CHECK(item_price>=0),
                         item_quant INTEGER CHECK(item_quant>=0));'''
         response = self.db.runQuerry(create_querry)
         return response
     def addInventory(self,name,price,stock):
+        if price<0:
+            return {"value":False,"message":"Price that you input is negative","data":None}
         add_querry = "INSERT INTO inventory(item_name,item_price,item_quant) VALUES(?,?,?)"
         response = self.db.runQuerry(add_querry,(name,price,stock))
         return response
