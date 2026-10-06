@@ -8,7 +8,7 @@ A command line backend system for managing inventory, user, admin and sale - bui
 
 -Python - 3.11
 - SQLITE (via Python's built in sqlite3 module)
-- bycrpt (password hasing)
+- bcrypt (password hashing)
 - python-dotenv(environment variable)
 
 ## FEATURES
@@ -16,32 +16,35 @@ A command line backend system for managing inventory, user, admin and sale - bui
 - Add, update search and delete inventory items by id and name
 - Allow user to add inventory items to cart
 - Register the purchase of User
-- Keep track of the sale and print the recipt for the user
-- All password are hashed with help of bycrpt
-- Parameterised querry throughout
+- Keep track of the sale and print the receipt for the user
+- All password are hashed with help of bcrypt
+- Parameterized  query throughout
 
 ## PROJECT STRUCTURE
 
-POS SYSTEM
- -database.py #connection management and schema creation
- -security.py #bycrpt hashing,login verification
- -inventory-management.py #intermediate between inventory.py and database.py
- -inventory.py #CRUD for inventory
- -admin-management.py #intermediate between admin.py and database.py
- -admin.py #CRUD for admin and talks with inventory.py
- -user-management.py #intermediate between user.py and databse.py
- -user.py #CRUD for user and also the POS happens here
- -main.py #Entry point, CLI
- -.env #Environment variable
- -README.md
+## Project Structure
 
-##
+```
+pos-system/
+├── database.py              # Connection management, schema creation
+├── security.py              # bcrypt hashing, login verification
+├── inventory_management.py  # Intermediate between inventory.py and database.py
+├── inventory.py             # CRUD for inventory
+├── admin_management.py      # Intermediate between admin.py and database.py
+├── admin.py                 # CRUD for admin, talks with inventory.py
+├── user_management.py       # Intermediate between user.py and database.py
+├── user.py                  # CRUD for user, POS logic happens here
+├── main.py                  # Entry point, CLI menu
+├── .env                     # Environment variables (not committed to git)
+└── README.md
+```
+
 ## Setup
 
 ```bash
 # Clone the repo
 git clone https://github.com/AdarshKumarHumney/POS.git
-cd library-system
+cd POS
 
 # Install dependencies
 pip install -r requirements.txt
@@ -59,12 +62,16 @@ python main.py
 ## Key Implementation Notes
 
 **Authentication flow:**
-Admin Registration Login/User Registration Login
-Admin Registration->login Credentials with bycrpt verification->Inevntory Management/CRUD
-User Registration -> Login credentials with bycrpt verification -> CRUD for cart -> Sale ->Recipt
+
+**Admin path:** Master password gate → Admin registration → 
+Credential-based login with bcrypt verification → Inventory management / CRUD
+
+**User path:** User registration → Credential-based login with 
+bcrypt verification → Cart management → Checkout → Receipt generation
+
 
 **Database design:**
-6 normalized tables (Inventory, user, admins, cart, sale, recipt) with 
+6 normalized tables (Inventory, user, admins, cart, sale, receipt) with 
 foreign key constraints and ON CONFLICT handling for upserts.
 
 **Security:**
@@ -80,10 +87,8 @@ foreign key constraints and ON CONFLICT handling for upserts.
 - How bcrypt salting works at the implementation level, not just conceptually
 - Separation of concerns across multiple files vs. one monolithic script
 - Fetching rows as dictionaries using sqlite3.Row or row_factory
-- Rollback Transaction, stop the process during transaction phase if encountered with any problem and no new write function in the database 
-- commitTransaction, commit to database only when eveything works smooth and fine till the final recipt
-- Upsert, how to handle adding something new if there is a collsion with primary key and attribute
-- ACID compliant checkout function
+- Upsert, how to handle adding something new if there is a collision with primary key and attribute
+- ACID-compliant transactions — rolling back on any failure so no partial writes reach the database, committing only when the full checkout succeeds
 ---
 
 ## Roadmap
@@ -91,3 +96,4 @@ foreign key constraints and ON CONFLICT handling for upserts.
 - [ ] Add pytest test suite for admin and transaction modules
 - [ ] Migrate to PostgreSQL + SQLAlchemy
 - [ ] Expose as REST API via FastAPI
+
