@@ -194,7 +194,7 @@ class Inventory:
                     print("There was problem in deleting the product")
                 break
             elif choose == "no":
-                print("There is a termination of the process. No product was deleted form the table")
+                print("There is a termination of the process. No product was deleted from the table")
                 break
             else:
                 print("Please select either yes or no")
